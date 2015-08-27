@@ -1,6 +1,6 @@
 -module(billing).
 
--export([credit/2, debit/2, balance/1]).
+-export([open/1, credit/2, debit/2, balance/1]).
 
 -type account_name() :: binary().
 -type worth() :: non_neg_integer().
@@ -18,20 +18,24 @@
 %%
 %% All money values are in USD cents.
 
+-spec open(Account :: account_name()) -> ok.
+open(Account) ->
+    billing_srv:open(Account).
+
 -spec credit(Account :: account_name(),
-             Amount :: worth()) -> ok |
+             Amount :: worth()) -> {ok, worth()} |
                                    {error, unknown_account}.
-credit(_Account, _Amount) ->
-    ok.
+credit(Account, Amount) ->
+    billing_srv:credit(Account, Amount).
 
 -spec debit(Account :: account_name(),
-            Amount :: worth()) -> ok |
+            Amount :: worth()) -> {ok, worth()} |
                                   {error, insufficient_balance} |
                                   {error, unknown_account}.
-debit(_Account, _Amount) ->
-    ok.
+debit(Account, Amount) ->
+    billing_srv:debit(Account, Amount).
 
 -spec balance(Account :: account_name()) -> {ok, worth()} |
                                             {error, unknown_account}.
-balance(_Account) ->
-    {error, unknown_account}.
+balance(Account) ->
+    billing_srv:balance(Account).

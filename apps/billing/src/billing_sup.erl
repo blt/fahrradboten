@@ -28,7 +28,11 @@ start_link() ->
 
 %% Child :: {Id,StartFunc,Restart,Shutdown,Type,Modules}
 init([]) ->
-    {ok, { {one_for_all, 0, 1}, []} }.
+    BillingSrv = {billing_srv,
+                  {billing_srv, start_link, []},
+                  permanent, 5000, worker, dynamic},
+
+    {ok, { {one_for_all, 100, 1}, [BillingSrv]} }.
 
 %%====================================================================
 %% Internal functions
