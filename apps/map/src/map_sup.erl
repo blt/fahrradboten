@@ -30,10 +30,10 @@ start_link() ->
 init([]) ->
     {ok, GraphConfig} = application:get_env(map, graph, {ok, [{verticies, [a, b,c]},
                                                               {edges, [
-                                                                       {a,c},
-                                                                       {b,c},
-                                                                       {c, a}
-                                                                      ]}
+                                                                       {{a,c},1},
+                                                                       {{b,c},1}
+                                                                      ]},
+                                                              {headquarters, a}
                                                               ]}),
     MapSrv = {map_srv,
               {map_srv, start_link, [GraphConfig]},

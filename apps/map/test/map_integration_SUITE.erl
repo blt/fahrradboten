@@ -69,9 +69,9 @@ test_boot_map_srv(_Config) ->
 
 test_map_path(_Config) ->
     %% see map_sup.erl for default graph
-    ?assertMatch({ok, [a,c, b]}, map:path(a, b)),
-    ?assertMatch({ok, [b,c]}, map:path(b, c)),
-    ?assertMatch({ok, [a,c]}, map:path(a, c)).
+    ?assertMatch({ok, {[a,c,b], 2}}, map:path(a, b)),
+    ?assertMatch({ok, {[b,c], 1}}, map:path(b, c)),
+    ?assertMatch({ok, {[a,c], 1}}, map:path(a, c)).
 
 %%%===================================================================
 %%% Internal Functions
