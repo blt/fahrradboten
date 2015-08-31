@@ -83,9 +83,11 @@ handle_call({details, OrderID}, _From, State = #state{orders = OrderList}) ->
                    {error, unknown_order_id};
                Order ->
                    {ok,
-                    Order#order.pickup_location,
-                    Order#order.dropoff_location,
-                    Order#order.worth
+                    {
+                      Order#order.pickup_location,
+                      Order#order.dropoff_location,
+                      Order#order.worth
+                    }
                    }
            end,
     {reply, Resp, State};
@@ -99,11 +101,12 @@ handle_call({delivered, OrderID}, _From, State = #state{orders = OrderList}) ->
                    end,
     {reply, ok, State#state{orders = NewOrderList}};
 handle_call(available, _From, State = #state{orders = OrderList}) ->
-    Available = lists:filter(fun
-                                 (#order{status = available}) -> true;
-                                 (_)                          -> false
-                             end, OrderList),
-    {reply, {ok, Available}, State};
+    AvailableOrders = lists:filter(fun
+                                       (#order{status = available}) -> true;
+                                       (_)                          -> false
+                                   end, OrderList),
+    OrderIDS = lists:map(fun(#order{order_id = ID}) -> ID end, AvailableOrders),
+    {reply, {ok, OrderIDS}, State};
 handle_call({submit, Order}, _From, State = #state{orders = OrderList}) ->
     NewOrderList = [Order | OrderList],
     {reply, ok, State#state{orders = NewOrderList}};
