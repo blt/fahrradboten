@@ -118,7 +118,15 @@ handle_call({status, OrderID}, _From, State = #state{orders = OrderList}) ->
     %% messenger
     Resp = case lists:keyfind(OrderID, 2, OrderList) of
                false -> {error, unknown_order_id};
-               _Other -> {ok, waiting_assignment}
+               Order ->
+                   case Order#order.status of
+                       available ->
+                           {ok, waiting_assignment};
+                       completed ->
+                           {ok, delivered};
+                       in_progress ->
+                           {ok, {assigned, Order#order.messenger}}
+                   end
            end,
     {reply, Resp, State};
 handle_call(_Request, _From, State) ->

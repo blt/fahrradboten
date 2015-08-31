@@ -86,7 +86,10 @@ test_submit_orders(_Config) ->
 
     %% create order
     ?assertMatch(ok, orders:submit(OrderID, PickupLocation, DropOffLocation, Worth)),
-    ?assertMatch({ok, waiting_assignment}, orders:status(OrderID)).
+    ?assertMatch({ok, waiting_assignment}, orders:status(OrderID)),
+
+    %% cancel order
+    ?assertMatch(ok, orders:cancel(OrderID)).
 
 test_cancel_orders(_Config) ->
     OrderID = <<"test_cancel_orders_id">>,
@@ -204,7 +207,7 @@ test_available_orders(_Config) ->
     ?assertMatch({ok, waiting_assignment}, orders:status(OrderID2)),
 
     %% check all available
-    ?assertMatch([OrderID0, OrderID1, OrderID2], orders:available()).
+    ?assertMatch({ok, [OrderID2, OrderID1, OrderID0]}, orders:available()).
 
 %%%===================================================================
 %%% Internal Functions

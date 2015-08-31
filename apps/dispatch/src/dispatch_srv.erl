@@ -38,8 +38,8 @@ location(Messenger) ->
 
 poll_for_orders() ->
     case orders:available() of
-        [] -> ok;
-        Available ->
+        {ok, []} -> ok;
+        {ok, Available} ->
             process_orders(Available)
     end.
 

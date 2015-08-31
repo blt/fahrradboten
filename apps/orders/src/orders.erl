@@ -46,6 +46,6 @@ status(OrderID) ->
 cancel(OrderID) ->
     orders_srv:cancel(OrderID).
 
--spec available() -> [order_id()].
+-spec available() -> {ok, [order_id()]}.
 available() ->
     orders_srv:available().

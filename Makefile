@@ -13,5 +13,7 @@ test:
 release:
 	rebar3 release
 
+clean:
+	rebar3 clean
 
 .PHONY: release test all compile
