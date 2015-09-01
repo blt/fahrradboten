@@ -4,8 +4,11 @@
   {registered, []},
   {mod, {'dispatch_app', []}},
   {applications,
-   [kernel,
-    stdlib
+   [
+    kernel,
+    stdlib,
+    orders,
+    map
    ]},
   {env,[]},
   {modules, []}

@@ -117,3 +117,13 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 travel_time_between(A, B) ->
     {ok, Distance} = map:distance(A, B),
     erlang:convert_time_unit(Distance, seconds, milli_seconds).
+
+%%%===================================================================
+%%% Tests
+%%%===================================================================
+
+-ifdef(TEST).
+
+-include_lib("eunit/include/eunit.hrl").
+
+-endif.

@@ -1,4 +1,4 @@
--module(fahrradboten_integration_SUITE).
+-module(dispatch_integration_SUITE).
 
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("common_test/include/ct.hrl").
@@ -8,7 +8,9 @@
          init_per_suite/1, end_per_suite/1,
          init_per_testcase/2, end_per_testcase/2,
          %% group: boot
-         test_boot_fahrradboten/1
+         test_boot_dispatch/1,
+         %% group: logic
+         test_clock_in_dispatch/1, test_location_dispatch/1
         ]).
 
 %%%===================================================================
@@ -17,14 +19,22 @@
 
 all() -> [
           {group, boot}
+          %% , {group, logic}
          ].
 
 groups() -> [
              {boot, [],
               [
-               test_boot_fahrradboten
+               test_boot_dispatch
+              ]
+             },
+             {logic, [],
+              [
+               test_clock_in_dispatch,
+               test_location_dispatch
               ]
              }
+
             ].
 
 
@@ -52,23 +62,35 @@ end_per_testcase(_Suite, _Config) ->
 %% Group : boot
 %%--------------------------------------------------------------------
 
-test_boot_fahrradboten(_Confif) ->
+test_boot_dispatch(_Config) ->
     ok.
+
+%%--------------------------------------------------------------------
+%% Group : logic
+%%--------------------------------------------------------------------
+
+test_clock_in_dispatch(_Config) ->
+    Messenger = <<"a_test_clock_in_dispatch_bicycle">>,
+
+    ?assertMatch(ok, dispatch:clock_in(Messenger)).
+
+test_location_dispatch(_Config) ->
+    Messenger = <<"a_test_location_dispatch_bicycle">>,
+    Headquarters = dispatch:headquarters(),
+
+    ?assertMatch(ok, dispatch:clock_in(Messenger)),
+    ?assertMatch({ok, {stationary, Headquarters}}, dispatch:location()).
 
 %%%===================================================================
 %%% Internal Functions
 %%%===================================================================
 
 start_system() ->
-    ok = application:start(billing),
-    ok = application:start(map),
     ok = application:start(orders),
-    ok = application:start(dispatch),
-    ok = application:start(fahrradboten).
+    ok = application:start(map),
+    ok = application:start(dispatch).
 
 stop_system() ->
-    _ = application:stop(dispatch),
-    _ = application:stop(orders),
     _ = application:stop(map),
-    _ = application:stop(billing),
-    _ = application:stop(fahrradboten).
+    _ = application:stop(orders),
+    _ = application:stop(dispatch).

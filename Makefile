@@ -1,19 +1,17 @@
+REBAR := `pwd`/rebar3
+
 all: test release
 
 compile:
-	rebar3 compile
+	@$(REBAR) compile
 
 test:
-	rebar3 xref
-	rebar3 dialyzer
-	rebar3 eunit
-	rebar3 ct
-	rebar3 cover
+	@$(REBAR) do xref, dialyzer, eunit, ct, cover
 
 release:
-	rebar3 release
+	@$(REBAR) release
 
 clean:
-	rebar3 clean
+	@$(REBAR) clean
 
-.PHONY: release test all compile
+.PHONY: release test all compile clean
