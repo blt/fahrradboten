@@ -1,9 +1,4 @@
-%%%-------------------------------------------------------------------
-%% @doc fahrradboten top level supervisor.
-%% @end
-%%%-------------------------------------------------------------------
-
--module('fahrradboten_sup').
+-module(fahrradboten_sup).
 
 -behaviour(supervisor).
 
@@ -13,32 +8,36 @@
 %% Supervisor callbacks
 -export([init/1]).
 
--define(SERVER, ?MODULE).
-
 %%====================================================================
 %% API functions
 %%====================================================================
 
 start_link() ->
-    supervisor:start_link({local, ?SERVER}, ?MODULE, []).
+    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 %%====================================================================
 %% Supervisor callbacks
 %%====================================================================
 
-%% Child :: {Id,StartFunc,Restart,Shutdown,Type,Modules}
 init([]) ->
-    Services = [map(), billing(), orders()],
+    BillingSrv = {billing_srv,
+                  {billing_srv, start_link, []},
+                  permanent, 5000, worker, dynamic},
+
+    OrdersSrv = {orders_srv,
+                 {orders_srv, start_link, []},
+                 permanent, 5000, worker, dynamic},
+
+    MapSrv = {map_srv,
+              {map_srv, start_link, [graph_config()]},
+              permanent, 5000, worker, dynamic},
+
+    Services = [MapSrv, BillingSrv, OrdersSrv],
     {ok, {{one_for_all, 100, 1}, Services}}.
 
 %%====================================================================
 %% Internal functions
 %%====================================================================
-
-map() ->
-    {map_srv,
-     {map_srv, start_link, [graph_config()]},
-     permanent, 5000, worker, dynamic}.
 
 graph_config() ->
     case application:get_env(fahrradboten, graph) of
@@ -47,16 +46,8 @@ graph_config() ->
     end.
 
 default_graph_config() ->
-    [{verticies, [a, b, c]},
+    [
+     {verticies, [a, b, c]},
      {edges, [{{a,c},1}, {{b,c},1}]},
-     {headquarters, a}].
-
-billing() ->
-    {billing_srv,
-     {billing_srv, start_link, []},
-     permanent, 5000, worker, dynamic}.
-
-orders() ->
-    {orders_srv,
-     {orders_srv, start_link, []},
-     permanent, 5000, worker, dynamic}.
+     {headquarters, a}
+    ].

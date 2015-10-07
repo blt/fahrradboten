@@ -1,9 +1,16 @@
 {application, fahrradboten,
- [{description, "An OTP application"},
+ [
+  {description, "An OTP application"},
   {vsn, "0.1.0"},
   {registered, []},
   {mod, {fahrradboten_app, []}},
-  {applications, [kernel, stdlib]},
+  {applications,
+   [
+    kernel,
+    stdlib
+   ]
+  },
   {env,[]},
   {modules, []}
- ]}.
+ ]
+}.
