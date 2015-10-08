@@ -3,7 +3,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/1, path/2, distance/2, headquarters/0]).
+-export([start_link/1, path/2, distance/2, headquarters/0, verticies/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -47,6 +47,10 @@ headquarters() ->
     {ok, Headquarters} = gen_server:call(?MODULE, headquarters, timer:seconds(5)),
     Headquarters.
 
+verticies() ->
+    {ok, Verticies} = gen_server:call(?MODULE, verticies, timer:seconds(5)),
+    Verticies.
+
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
@@ -57,9 +61,15 @@ init([GraphConfig]) ->
     interp(State#state.graph, GraphConfig),
     {ok, State}.
 
+handle_call(verticies, _From, State) ->
+    Graph = State#state.graph,
+    {reply, {ok, digraph:vertices(Graph)}, State};
 handle_call(headquarters, _From, State = #state{headquarters = HQ}) ->
     {reply, {ok, HQ}, State};
-handle_call({path, A, B}, _From, State) when A =/= B ->
+handle_call({path, A, A}, _From, State) ->
+    Resp = {ok, {[], 0}},
+    {reply, Resp, State};
+handle_call({path, A, B}, _From, State) ->
     Graph = State#state.graph,
     Resp = case digraph:get_path(Graph, A, B) of
                false -> {error, no_path};
@@ -76,7 +86,7 @@ handle_call({distance, A, B}, _From, State) ->
            end,
     {reply, Repl, State};
 handle_call(_Request, _From, State) ->
-    {reply, ok, State}.
+    {reply, unknown_request, State}.
 
 handle_cast(_Msg, State) ->
     {noreply, State}.

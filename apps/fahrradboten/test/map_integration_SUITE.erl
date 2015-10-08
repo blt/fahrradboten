@@ -9,6 +9,8 @@
          init_per_testcase/2, end_per_testcase/2,
          %% group: boot
          test_boot_map_srv/1,
+         %% group: data
+         test_load_map_srv/1,
          %% group: logic
          test_map_path/1, test_map_distance/1, test_headquarters/1
         ]).
@@ -19,6 +21,7 @@
 
 all() -> [
           {group, boot},
+          {group, data},
           {group, logic}
          ].
 
@@ -26,6 +29,11 @@ groups() -> [
              {boot, [],
               [
                test_boot_map_srv
+              ]
+             },
+             {data, [],
+              [
+               test_load_map_srv
               ]
              },
              {logic, [shuffle, {repeat_until_any_fail, 10}],
@@ -66,14 +74,23 @@ test_boot_map_srv(_Config) ->
     ok.
 
 %%--------------------------------------------------------------------
+%% Group : data
+%%--------------------------------------------------------------------
+
+test_load_map_srv(_Config) ->
+    Verticies = lists:sort(map:verticies()),
+    ?assertMatch([a,b,c], Verticies).
+
+%%--------------------------------------------------------------------
 %% Group : logic
 %%--------------------------------------------------------------------
 
 test_map_path(_Config) ->
     %% see map_sup.erl for default graph
+    ?assertMatch({ok, {[], 0}},      map:path(a, a)),
     ?assertMatch({ok, {[a,c,b], 2}}, map:path(a, b)),
-    ?assertMatch({ok, {[b,c], 1}}, map:path(b, c)),
-    ?assertMatch({ok, {[a,c], 1}}, map:path(a, c)).
+    ?assertMatch({ok, {[b,c], 1}},   map:path(b, c)),
+    ?assertMatch({ok, {[a,c], 1}},   map:path(a, c)).
 
 test_map_distance(_Config) ->
     ?assertMatch({error, no_direct_connection}, map:distance(a, b)),
