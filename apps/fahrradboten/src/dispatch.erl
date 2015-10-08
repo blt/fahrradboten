@@ -14,11 +14,11 @@
 clock_in(Messenger) ->
     dispatch_srv:clock_in(Messenger).
 
--spec location(Messenger :: messenger()) ->
-                      {ok,
-                       {in_transit, {map:vertex(),
-                                     map:vertex()}}
-                       | {stationary, map:vertex()}} | {error, unknown}.
+-spec location(Messenger :: messenger()) -> {ok,
+                                             {in_transit, {map:vertex(),
+                                                           map:vertex()}} |
+                                             {stationary, map:vertex()}} |
+                                            {error, unknown}.
 location(Messenger) ->
     dispatch_srv:location(Messenger).
 

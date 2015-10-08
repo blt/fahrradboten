@@ -5,6 +5,7 @@
          cancel/1,
          details/1,
          assign/2,
+         all_ids/0,
          delivered/1,
          available/0]).
 
@@ -16,6 +17,9 @@
 %%% API
 %%%===================================================================
 
+-spec all_ids() -> {ok, [order_id()]}.
+all_ids() -> orders_srv:all_ids().
+
 %%--------------------------------------------------------------------
 %% Submit an order
 %%--------------------------------------------------------------------
@@ -24,7 +28,6 @@
              PickupLocation :: map:vertex(),
              DropOffLocation :: map:vertex(),
              Worth :: billing:worth()) -> ok.
-
 submit(OrderID, PickupLocation, DropOffLocation, Worth) ->
     orders_srv:submit(OrderID, PickupLocation, DropOffLocation, Worth).
 

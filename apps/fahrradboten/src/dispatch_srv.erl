@@ -43,16 +43,12 @@ poll_for_orders() ->
             process_orders(Available)
     end.
 
--spec process_orders([orders:order_id()]) -> ok.
-process_orders(Orders) ->
-    gen_server:cast(?MODULE, {process, Orders}).
-
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
 
 init([]) ->
-    {ok, OrderPollTRef} = timer:apply_interval(100, ?MODULE, poll_for_orders, []),
+    {ok, OrderPollTRef} = timer:apply_interval(timer:seconds(1), ?MODULE, poll_for_orders, []),
     State = #state{
                order_poll_tref = OrderPollTRef
               },
@@ -120,6 +116,9 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+process_orders(Orders) ->
+    gen_server:cast(?MODULE, {process, Orders}).
 
 subtract(L, []) ->
     L;

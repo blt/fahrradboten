@@ -24,7 +24,7 @@
 %%%===================================================================
 
 start(MessengerID) ->
-    gen_fsm:start({local, ?MODULE}, ?MODULE, [MessengerID], []).
+    gen_fsm:start(?MODULE, [MessengerID], []).
 
 location(Pid) ->
     gen_fsm:sync_send_event(Pid, location, timer:seconds(5)).
@@ -44,13 +44,23 @@ idle({work, OrderID}, From, State) ->
     {ok, {PackagePath, _TotalDistance}} = map:path(PickupLocation, DropOffLocation),
     CurrentLocation = State#state.current_location,
     {ok, {Route, _RouteDistance}} = map:path(CurrentLocation, PickupLocation),
-    [CurrentLocation, NextLocation | _Rest] = Route,
-    TravelTime = travel_time_between(CurrentLocation, NextLocation),
-    NewState = State#state{
-                 current_location = in_transit,
-                 package_path = PackagePath,
-                 route = lists:nthtail(1, Route)
-                },
+    {TravelTime, NewState} = case Route of
+                                 [CurrentLocation, NextLocation | _Rest] ->
+                                     TT = travel_time_between(CurrentLocation, NextLocation),
+                                     {TT, State#state{
+                                            order_id         = OrderID,
+                                            current_location = in_transit,
+                                            package_path     = PackagePath,
+                                            route            = lists:nthtail(1, Route)
+                                           }};
+                                 [CurrentLocation] ->
+                                     {0, State#state{
+                                           order_id         = OrderID,
+                                           current_location = in_transit,
+                                           package_path     = PackagePath,
+                                           route            = [CurrentLocation]
+                                          }}
+                             end,
     gen_fsm:reply(From, ok),
     {next_state, traveling_to_pickup, NewState, TravelTime}.
 
@@ -89,7 +99,7 @@ delivering_package(timeout, State) ->
             NewState = State#state{
                          route = [NextLocation | Rest]
                         },
-            {next_state, traveling_to_pickup, NewState, TravelTime}
+            {next_state, delivering_package, NewState, TravelTime}
     end.
 
 handle_event(_Event, StateName, State) ->
@@ -114,6 +124,7 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 
 -spec travel_time_between(A :: map:vertex(),
                           B :: map:vertex()) -> non_neg_integer().
+travel_time_between(A, A) -> 0;
 travel_time_between(A, B) ->
     {ok, Distance} = map:distance(A, B),
     erlang:convert_time_unit(Distance, seconds, milli_seconds).

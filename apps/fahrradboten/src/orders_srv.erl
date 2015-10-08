@@ -4,7 +4,7 @@
 
 %% API
 -export([start_link/0]).
--export([submit/4, status/1, cancel/1, available/0, delivered/1, details/1, assign/2]).
+-export([submit/4, status/1, cancel/1, available/0, delivered/1, details/1, assign/2, all_ids/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -29,6 +29,9 @@
 
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+all_ids() ->
+    gen_server:call(?MODULE, all_ids, timer:seconds(5)).
 
 submit(OrderID, PickupLocation, DropOffLocation, Worth) ->
     Order = #order{
@@ -65,6 +68,9 @@ assign(OrderID, Messenger) ->
 init([]) ->
     {ok, #state{}}.
 
+handle_call(all_ids, _From, State = #state{orders = OrderList}) ->
+    OrderIDs = lists:map(fun(#order{order_id = ID}) -> ID end, OrderList),
+    {reply, {ok, OrderIDs}, State};
 handle_call({assign, OrderID, Messenger}, _From, State = #state{orders = OrderList}) ->
     NewOrderList =
         case lists:keyfind(OrderID, 2, OrderList) of

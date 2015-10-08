@@ -67,7 +67,7 @@ handle_call(verticies, _From, State) ->
 handle_call(headquarters, _From, State = #state{headquarters = HQ}) ->
     {reply, {ok, HQ}, State};
 handle_call({path, A, A}, _From, State) ->
-    Resp = {ok, {[], 0}},
+    Resp = {ok, {[A], 0}},
     {reply, Resp, State};
 handle_call({path, A, B}, _From, State) ->
     Graph = State#state.graph,
