@@ -4,7 +4,7 @@
 
 %% API
 -export([start_link/0]).
--export([submit/4, status/1, cancel/1, available/0, delivered/1, details/1, assign/2, all_ids/0]).
+-export([submit/4, status/1, cancel/1, available/0, delivered/1, details/1, assign/2, all_ids/0, total_ids/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -20,7 +20,8 @@
          }).
 
 -record(state, {
-          orders = [] :: [#order{}]
+          orders = [] :: [#order{}],
+          total = 0   :: integer()
          }).
 
 %%%===================================================================
@@ -32,6 +33,9 @@ start_link() ->
 
 all_ids() ->
     gen_server:call(?MODULE, all_ids, timer:seconds(5)).
+
+total_ids() ->
+    gen_server:call(?MODULE, total_ids, timer:seconds(5)).
 
 submit(OrderID, PickupLocation, DropOffLocation, Worth) ->
     Order = #order{
@@ -71,6 +75,8 @@ init([]) ->
 handle_call(all_ids, _From, State = #state{orders = OrderList}) ->
     OrderIDs = lists:map(fun(#order{order_id = ID}) -> ID end, OrderList),
     {reply, {ok, OrderIDs}, State};
+handle_call(total_ids, _From, State = #state{total = Total}) ->
+    {reply, {ok, Total}, State};
 handle_call({assign, OrderID, Messenger}, _From, State = #state{orders = OrderList}) ->
     NewOrderList =
         case lists:keyfind(OrderID, 2, OrderList) of
@@ -115,9 +121,9 @@ handle_call(available, _From, State = #state{orders = OrderList}) ->
                                    end, OrderList),
     OrderIDS = lists:map(fun(#order{order_id = ID}) -> ID end, AvailableOrders),
     {reply, {ok, OrderIDS}, State};
-handle_call({submit, Order}, _From, State = #state{orders = OrderList}) ->
+handle_call({submit, Order}, _From, State = #state{orders = OrderList, total = Total}) ->
     NewOrderList = [Order | OrderList],
-    {reply, ok, State#state{orders = NewOrderList}};
+    {reply, ok, State#state{orders = NewOrderList, total = Total + 1}};
 handle_call({cancel, OrderID}, _From, State = #state{orders = OrderList}) ->
     NewOrderList = lists:keydelete(OrderID, 2, OrderList),
     {reply, ok, State#state{orders = NewOrderList}};
