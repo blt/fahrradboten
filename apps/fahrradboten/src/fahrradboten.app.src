@@ -7,7 +7,8 @@
   {applications,
    [
     kernel,
-    stdlib
+    stdlib,
+    exometer_core
    ]
   },
   {env,[]},

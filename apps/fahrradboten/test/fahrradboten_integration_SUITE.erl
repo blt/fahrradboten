@@ -60,7 +60,19 @@ test_boot_fahrradboten(_Confif) ->
 %%%===================================================================
 
 start_system() ->
+    ok = application:start(setup),
+    ok = application:start(compiler),
+    ok = application:start(syntax_tools),
+    ok = application:start(goldrush),
+    ok = application:start(lager),
+    ok = application:start(exometer_core),
     ok = application:start(fahrradboten).
 
 stop_system() ->
-    _ = application:stop(fahrradboten).
+    _ = application:stop(fahrradboten),
+    _ = application:stop(exometer_core),
+    _ = application:stop(lager),
+    _ = application:stop(goldrush),
+    _ = application:stop(syntax_tools),
+    _ = application:stop(compiler),
+    _ = application:stop(setup).
