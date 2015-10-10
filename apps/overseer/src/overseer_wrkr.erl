@@ -29,13 +29,12 @@ start_link() ->
 %%%===================================================================
 
 init([]) ->
-    {ok, _TRef} = timer:send_after(0, submit_order),
     [To, From | _] = shuffle_lst(map:verticies()),
     State = #state{
                pickup = To,
                dropoff = From
               },
-    {ok, State}.
+    {ok, State, 0}.
 
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
@@ -61,7 +60,7 @@ handle_info(timeout, State = #state{fsm_state = polling_order, order_id = OrderI
                        State
                end,
     {noreply, NewState};
-handle_info(submit_order, State = #state{order_id = OrderID, pickup = P, dropoff = D}) ->
+handle_info(timeout, State = #state{fsm_state = start, order_id = OrderID, pickup = P, dropoff = D}) ->
     orders:submit(OrderID, P, D, 1000),
     {ok, _} = timer:send_after(100, timeout),
     {noreply, State#state{fsm_state = polling_order}};
