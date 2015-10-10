@@ -37,7 +37,7 @@ init([]) ->
               permanent, 5000, worker, dynamic},
 
     Services = [MapSrv, BillingSrv, OrdersSrv, DispatchSrv],
-    {ok, {{one_for_all, 100, 1}, Services}}.
+    {ok, {{one_for_one, 100, 1}, Services}}.
 
 %%====================================================================
 %% Internal functions

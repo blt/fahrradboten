@@ -61,8 +61,7 @@ init([GraphConfig]) ->
     interp(State#state.graph, GraphConfig),
     {ok, State}.
 
-handle_call(verticies, _From, State) ->
-    Graph = State#state.graph,
+handle_call(verticies, _From, State = #state{graph = Graph}) ->
     {reply, {ok, digraph:vertices(Graph)}, State};
 handle_call(headquarters, _From, State = #state{headquarters = HQ}) ->
     {reply, {ok, HQ}, State};
