@@ -1,7 +1,7 @@
 {application, overseer,
  [
   {description, "An OTP application about an OTP application"},
-  {vsn, "0.1.0"},
+  {vsn, "0.1.1"},
   {registered, []},
   {mod, {overseer_app, []}},
   {applications,
