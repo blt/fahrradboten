@@ -1,19 +1,7 @@
-%% -------------------------------------------------------------------
-%%
-%% Copyright (c) 2013 AdRoll.  All Rights Reserved.
-%%
-%%   This Source Code Form is subject to the terms of the Mozilla Public
-%%   License, v. 2.0. If a copy of the MPL was not distributed with this
-%%   file, You can obtain one at http://mozilla.org/MPL/2.0/.
-%%
-%% -------------------------------------------------------------------
-
 -module(exometer_report_statsd).
 -behaviour(exometer_report).
 
 -include_lib("kernel/include/inet.hrl").
--include_lib("exometer_core/include/exometer.hrl").
--include("log.hrl").
 
 %% gen_server callbacks
 -export(
@@ -36,7 +24,6 @@
 -record(st, {socket  :: inet:socket(),
              address :: inet:ip_address(),
              port    :: inet:port_number(),
-             prefix  :: string(),
              type_map :: [{list(atom()), atom()}]}).
 
 %%%===================================================================
@@ -44,40 +31,37 @@
 %%%===================================================================
 
 exometer_init(Opts) ->
-    ?info("~p(~p): Starting~n", [?MODULE, Opts]),
     {ok, Host} = inet:gethostbyname(get_opt(hostname, Opts, ?DEFAULT_HOST)),
     [IP|_]     = Host#hostent.h_addr_list,
     AddrType   = Host#hostent.h_addrtype,
     Port       = get_opt(port, Opts, ?DEFAULT_PORT),
     TypeMap    = get_opt(type_map, Opts, []),
-    Prefix     = get_opt(prefix, Opts, []),
 
     case gen_udp:open(0, [AddrType]) of
-	{ok, Sock} ->
-	    {ok, #st{socket=Sock, address=IP, port=Port, type_map=TypeMap,
-		     prefix=Prefix}};
-	{error, _} = Error ->
-	    Error
+        {ok, Sock} ->
+            {ok, #st{socket=Sock, address=IP, port=Port, type_map=TypeMap}};
+        {error, _} = Error ->
+            Error
     end.
 
 
-exometer_report(Metric, DataPoint, Extra, Value, #st{type_map = TypeMap,
-						     prefix = Pfx} = St) ->
-    Key = ets_key(Pfx, Metric, DataPoint),
-    Name = name(Pfx, Metric, DataPoint),
-    ?debug("Report metric ~p = ~p~n", [Name, Value]),
-    Type = case exometer_util:report_type(Key, Extra, TypeMap) of
-               {ok, T} -> T;
-               error -> gauge
-           end,
-    Line = [Name, ":", value(Value), "|", type(Type)],
-    case gen_udp:send(St#st.socket, St#st.address, St#st.port, Line) of
-        ok ->
-            {ok, St};
-        {error, Reason} ->
-            ?info("Unable to write metric. ~p~n", [Reason]),
-            {ok, St}
-    end.
+exometer_report(_, _, _, undefined, St) ->
+    {ok, St};
+
+exometer_report(Metric, DataPoint, Extra, Value, #st{type_map = TypeMap} = St) ->
+    Key = ets_key(Metric, DataPoint),
+    Name = name(Metric, DataPoint),
+    case exometer_util:report_type(Key, Extra, TypeMap) of
+        {ok, Type} ->
+            Line = line(Name, Value, Type, tags(Metric)),
+            _ = gen_udp:send(St#st.socket, St#st.address, St#st.port, Line);
+        error ->
+            error_logger:warning_msg(
+              "Could not resolve ~p to a statsd type."
+              "Update exometer_report_statsd -> type_map in app.config. "
+              "Value lost~n", [Key])
+    end,
+    {ok, St}.
 
 exometer_subscribe(_Metric, _DataPoint, _Extra, _Interval, St) ->
     {ok, St}.
@@ -85,16 +69,13 @@ exometer_subscribe(_Metric, _DataPoint, _Extra, _Interval, St) ->
 exometer_unsubscribe(_Metric, _DataPoint, _Extra, St) ->
     {ok, St}.
 
-exometer_call(Unknown, From, St) ->
-    ?info("Unknown call ~p from ~p", [Unknown, From]),
+exometer_call(_Unknown, _From, St) ->
     {ok, St}.
 
-exometer_cast(Unknown, St) ->
-    ?info("Unknown cast: ~p", [Unknown]),
+exometer_cast(_Unknown, St) ->
     {ok, St}.
 
-exometer_info(Unknown, St) ->
-    ?info("Unknown info: ~p", [Unknown]),
+exometer_info(_Unknown, St) ->
     {ok, St}.
 
 exometer_newentry(_Entry, St) ->
@@ -110,6 +91,12 @@ exometer_terminate(_, _) ->
 %%% Internal Functions
 %%%===================================================================
 
+line(Name, Value, Type, [])->
+    [Name, ":", value(Value), "|", type(Type)];
+line(Name, Value, Type, Tags)->
+    [Name, ":", value(Value), "|", type(Type), "|#", Tags].
+
+
 get_opt(K, Opts, Def) ->
     exometer_util:get_opt(K, Opts, Def).
 
@@ -120,21 +107,21 @@ type(histogram) -> "h";
 type(meter) -> "m";
 type(set) -> "s". %% datadog specific type, see http://docs.datadoghq.com/guides/dogstatsd/#tags
 
-ets_key([] , Metric, DataPoint) -> Metric ++ [ DataPoint ];
-ets_key(Pfx, Metric, DataPoint) -> [ Pfx | Metric ] ++ [ DataPoint ].
+ets_key(Metric, DataPoint) -> Metric ++ [ DataPoint ].
 
-name(Prefix, Metric, DataPoint) ->
-    intersperse(".", lists:map(fun thing_to_list/1,
-                               ets_key(Prefix, Metric, DataPoint))).
+name(Metric, DataPoint) ->
+    Metric0 = lists:takewhile(fun(Elem)-> not is_tuple(Elem) end, Metric),
+    intersperse(".", lists:map(fun value/1, ets_key(Metric0, DataPoint))).
 
-thing_to_list(X) when is_atom(X) -> atom_to_list(X);
-thing_to_list(X) when is_integer(X) -> integer_to_list(X);
-thing_to_list(X) when is_binary(X) -> X;
-thing_to_list(X) when is_list(X) -> X.
+tags(Metric)->
+    Tags = lists:dropwhile(fun(Elem)-> not is_tuple(Elem) end, Metric),
+    intersperse(",", [intersperse(":", lists:map(fun value/1, [K,V])) || {K,V} <- Tags]).
 
-value(V) when is_integer(V) -> integer_to_list(V);
-value(V) when is_float(V)   -> float_to_list(V);
-value(_)                    -> 0.
+value(X) when is_atom(X)    -> atom_to_list(X);
+value(X) when is_integer(X) -> integer_to_list(X);
+value(X) when is_float(X)   -> io_lib:format("~.6f", [X]);
+value(X) when is_binary(X)  -> X;
+value(X) when is_list(X)    -> X.
 
 intersperse(_, [])         -> [];
 intersperse(_, [X])        -> [X];
