@@ -48,19 +48,11 @@ exometer_init(Opts) ->
 exometer_report(_, _, _, undefined, St) ->
     {ok, St};
 
-exometer_report(Metric, DataPoint, Extra, Value, #st{type_map = TypeMap} = St) ->
-    Key = ets_key(Metric, DataPoint),
+exometer_report(Metric, DataPoint, _Extra, Value, #st{} = St) ->
     Name = name(Metric, DataPoint),
-    case exometer_util:report_type(Key, Extra, TypeMap) of
-        {ok, Type} ->
-            Line = line(Name, Value, Type, tags(Metric)),
-            _ = gen_udp:send(St#st.socket, St#st.address, St#st.port, Line);
-        error ->
-            error_logger:warning_msg(
-              "Could not resolve ~p to a statsd type."
-              "Update exometer_report_statsd -> type_map in app.config. "
-              "Value lost~n", [Key])
-    end,
+    Type = type(gauge),
+    Line = line(Name, Value, Type, tags(Metric)),
+    _ = gen_udp:send(St#st.socket, St#st.address, St#st.port, Line),
     {ok, St}.
 
 exometer_subscribe(_Metric, _DataPoint, _Extra, _Interval, St) ->
@@ -105,7 +97,8 @@ type(counter) -> "c";
 type(timer) -> "ms";
 type(histogram) -> "h";
 type(meter) -> "m";
-type(set) -> "s". %% datadog specific type, see http://docs.datadoghq.com/guides/dogstatsd/#tags
+type(set) -> "s"; %% datadog specific type, see http://docs.datadoghq.com/guides/dogstatsd/#tags
+type(Other) -> Other.
 
 ets_key(Metric, DataPoint) -> Metric ++ [ DataPoint ].
 
