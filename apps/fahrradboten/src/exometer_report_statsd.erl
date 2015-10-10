@@ -93,11 +93,6 @@ get_opt(K, Opts, Def) ->
     exometer_util:get_opt(K, Opts, Def).
 
 type(gauge) -> "g";
-type(counter) -> "c";
-type(timer) -> "ms";
-type(histogram) -> "h";
-type(meter) -> "m";
-type(set) -> "s"; %% datadog specific type, see http://docs.datadoghq.com/guides/dogstatsd/#tags
 type(Other) -> Other.
 
 ets_key(Metric, DataPoint) -> Metric ++ [ DataPoint ].
