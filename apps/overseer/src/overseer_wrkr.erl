@@ -45,7 +45,7 @@ handle_cast(_Msg, State) ->
 handle_info(report, State = #state{start_time = ST, fsm_state=reporting}) ->
     Now = erlang:system_time(milli_seconds),
     Diff = (Now - ST) / 1000,
-    io:format(user, "DONE! Latency (sec): ~p~n", [Diff]),
+    exometer:update([overseer, wrkr, latency], Diff),
     {stop, normal, State};
 handle_info(timeout, State = #state{fsm_state = polling_order, order_id = OrderID}) ->
     NewState = case orders:status(OrderID) of
