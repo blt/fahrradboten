@@ -1,8 +1,8 @@
 {"0.1.1",
  [{"0.1.0", [
-              {update, overseer_wrkr, {advanced, [from0to1]}}
+              {load_module, overseer_wrkr}
              ]}],
  [{"0.1.0",[
-             {update, overseer_wrkr, {advanced, [from1to0]}}
+             {load_module, overseer_wrkr}
             ]}]
 }.
