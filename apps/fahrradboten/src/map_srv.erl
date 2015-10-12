@@ -10,7 +10,7 @@
          terminate/2, code_change/3]).
 
 -record(state, {
-          headquarters :: map:vertex(),
+          headquarters :: vertex(),
           graph = digraph:new([]) :: digraph:graph()
          }).
 
